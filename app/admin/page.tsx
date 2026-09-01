@@ -8,7 +8,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export default function Admin() {
   const [step, setStep] = useState(1)
   const [seal, setSeal] = useState('')
-  const [email, setEmail] = useState('shanmugavelvetri@gmail.com')
+  const [email, setEmail] = useState('')
   const [pwd, setPwd] = useState('')
   const [otp, setOtp] = useState('')
   const [authed, setAuthed] = useState(false)
@@ -35,20 +35,19 @@ export default function Admin() {
   }
 
   async function handlePublish(){
-    if(!title||!pdfFile||!coverFile) return alert('Title*, PDF*, Cover JPG Mandatory* - Front Cover=First Page')
+    if(!title||!pdfFile||!coverFile) return alert('Title, PDF and Cover are required')
     setUploading(true)
     try{
       const pdfRes = await uploadToBucket(pdfFile,'ebooks')
       const coverRes = await uploadToBucket(coverFile,'covers')
       const { error } = await supabase.from('ebooks').insert({
         title, pdf_url: pdfRes.url, pdf_path: pdfRes.path,
-        cover_url: coverRes.url, cover_public_id: null,
-        mrp, authors: ['Shanmugavel M'],
+        cover_url: coverRes.url, mrp, authors: ['Shanmugavel M'],
         publisher: 'SHANMUGAVEL BOOKUNIVERSE',
         description: 'World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy'
       })
       if(error) throw error
-      alert('Published! PDF->ebooks bucket + Cover->covers bucket + Cloudinary ready - Coin Logo Mandatory')
+      alert('Published!')
       setTitle(''); setPdfFile(null); setCoverFile(null); setTab('mybooks')
     }catch(e:any){ alert('Upload failed: '+e.message) }
     setUploading(false)
@@ -57,13 +56,62 @@ export default function Admin() {
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] grid place-items-center p-6">
-        <div className="w-full max-w-[420px] rounded-[20px] bg-black border border-[#D4AF37]/20 p-8 text-center">
+        <div className="w-full max-w- rounded- bg-black border border-[#D4AF37]/20 p-8 text-center">
           <div className="flex justify-center mb-4"><CoinLogo size={80} /></div>
-          <h1 className="font-serif-lux text-[24px] font-bold">SHANMUGAVEL BOOKUNIVERSE</h1>
-          <p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/70">Founder Vault • Private • 3-Step Auth • Coin Logo Mandatory</p>
-          {step===1 && (<div className="mt-8 text-left"><label className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Step 1: Founder Seal Password</label><p className="text-[11px] text-white/40 mt-1">Hint: Try VELS5PERCENT or FOR 5% THINKERS</p><input value={seal} onChange={e=>setSeal(e.target.value)} placeholder="Enter Seal Password" className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-[#D4AF37]/20 text-[13px]" /><button onClick={()=>{if(seal.toUpperCase().includes('VELS5PERCENT')||seal.toUpperCase().includes('FOR 5')) setStep(2); else alert('Invalid Seal')}} className="mt-4 w-full h-11 rounded-full bg-[#D4AF37] text-black font-bold text-[12px] uppercase">Unlock Seal • Coin Logo</button></div>)}
-          {step===2 && (<div className="mt-8 text-left"><label className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Step 2: Email / Password</label><p className="text-[11px] text-white/40 mt-1">Founder: shanmugavelvetri@gmail.com • VelShanmugam@850</p><input value={email} onChange={e=>setEmail(e.target.value)} className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-white/10 text-[13px]" /><input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="VelShanmugam@850" className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-white/10 text-[13px]" /><button onClick={()=>{if(email.trim()==='shanmugavelvetri@gmail.com'&&pwd==='VelShanmugam@850') setStep(3); else alert('Invalid')}} className="mt-4 w-full h-11 rounded-full bg-[#D4AF37] text-black font-bold text-[12px] uppercase">Next • Email Verify</button></div>)}
-          {step===3 && (<div className="mt-8 text-left"><label className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Step 3: OTP LAST</label><p className="text-[11px] text-white/40 mt-1">OTP to shanmugavelvetri@gmail.com — Bypass for dev allowed</p><input value={otp} onChange={e=>setOtp(e.target.value)} placeholder="Enter 6-digit OTP" className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-[#D4AF37]/20 text-[13px]" /><button onClick={()=>setAuthed(true)} className="mt-4 w-full h-11 rounded-full bg-[#D4AF37] text-black font-bold text-[12px] uppercase">Verify OTP • Vault Live</button><button onClick={()=>setAuthed(true)} className="mt-2 w-full h-10 rounded-full border border-white/10 text-[11px] uppercase">Bypass for Dev</button></div>)}
+          <h1 className="font-serif-lux text- font-bold">SHANMUGAVEL BOOKUNIVERSE</h1>
+          <p className="text- uppercase tracking-widest text-[#D4AF37]/70 mt-1">FOUNDER VAULT</p>
+
+          {step===1 && (
+            <div className="mt-8 text-left">
+              <label className="text- uppercase tracking-widest text-[#D4AF37]">Step 1: Founder Seal</label>
+              <input
+                value={seal}
+                onChange={e=>setSeal(e.target.value)}
+                placeholder="Enter Seal"
+                autoComplete="off"
+                className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-[#D4AF37]/20 text- outline-none focus:border-[#D4AF37]"
+              />
+              <button onClick={()=>{if(seal.toUpperCase().includes('VELS5PERCENT')||seal.toUpperCase().includes('FOR 5')) setStep(2); else alert('Invalid Seal')}} className="mt-4 w-full h-11 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase">Unlock</button>
+            </div>
+          )}
+
+          {step===2 && (
+            <div className="mt-8 text-left">
+              <label className="text- uppercase tracking-widest text-[#D4AF37]">Step 2: Email / Password</label>
+              <input
+                value={email}
+                onChange={e=>setEmail(e.target.value)}
+                type="email"
+                placeholder="Email"
+                autoComplete="off"
+                className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-white/10 text- outline-none focus:border-[#D4AF37]/50"
+              />
+              <input
+                type="password"
+                value={pwd}
+                onChange={e=>setPwd(e.target.value)}
+                placeholder="Password"
+                autoComplete="new-password"
+                className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-white/10 text- outline-none focus:border-[#D4AF37]/50"
+              />
+              <button onClick={()=>{if(email.trim()==='shanmugavelvetri@gmail.com'&&pwd==='VelShanmugam@850') setStep(3); else alert('Invalid')}} className="mt-4 w-full h-11 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase">Next</button>
+            </div>
+          )}
+
+          {step===3 && (
+            <div className="mt-8 text-left">
+              <label className="text- uppercase tracking-widest text-[#D4AF37]">Step 3: OTP</label>
+              <input
+                value={otp}
+                onChange={e=>setOtp(e.target.value)}
+                placeholder="Enter OTP"
+                autoComplete="one-time-code"
+                className="mt-3 w-full h-11 px-4 rounded-full bg-black border border-[#D4AF37]/20 text- outline-none focus:border-[#D4AF37]"
+              />
+              <button onClick={()=>setAuthed(true)} className="mt-4 w-full h-11 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase">Verify</button>
+              <button onClick={()=>setAuthed(true)} className="mt-2 w-full h-10 rounded-full border border-white/10 text- uppercase text-white/60">Bypass</button>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -72,43 +120,37 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <header className="sticky top-0 bg-black/80 backdrop-blur border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3"><CoinLogo size={48} /><div><h1 className="font-serif-lux text-[18px] font-bold">SHANMUGAVEL BOOKUNIVERSE • Founder Vault</h1><p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/60">Unlocked • P2 DONE • Hybrid Supabase + Cloudinary • Coin Logo Mandatory</p></div></div>
-        <div className="flex items-center gap-2"><span className="h-7 px-3 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[10px] uppercase flex items-center gap-2"><CoinLogo size={16}/>Vault Live</span><a href="/" className="h-9 px-4 rounded-full border border-white/10 text-[11px] uppercase grid place-items-center">User View</a></div>
+        <div className="flex items-center gap-3"><CoinLogo size={48} /><h1 className="font-serif-lux text- font-bold">FOUNDER VAULT</h1></div>
+        <div className="flex items-center gap-2"><a href="/" className="h-9 px-4 rounded-full border border-white/10 text- uppercase grid place-items-center">User View</a></div>
       </header>
       <div className="px-6 py-4 flex flex-wrap gap-2 border-b border-white/10">
-        {[{id:'mybooks',label:'My Books'},{id:'ebooks',label:'Create eBook'},{id:'audiobooks',label:'Create Audiobook'},{id:'dashboard',label:'Dashboard'},{id:'founder',label:'Founder Profile'}].map(c=>(
-          <button key={c.id} onClick={()=>setTab(c.id)} className={`h-9 px-4 rounded-full text-[11px] uppercase tracking-widest border ${tab===c.id?'bg-[#D4AF37] text-black border-[#D4AF37] font-bold':'border-white/10 text-white/60'}`}>{c.label}</button>
+        {[{id:'mybooks',label:'My Books'},{id:'ebooks',label:'Create eBook'},{id:'audiobooks',label:'Create Audiobook'},{id:'dashboard',label:'Dashboard'}].map(c=>(
+          <button key={c.id} onClick={()=>setTab(c.id)} className={`h-9 px-4 rounded-full text- uppercase tracking-widest border ${tab===c.id?'bg-[#D4AF37] text-black border-[#D4AF37] font-bold':'border-white/10 text-white/60'}`}>{c.label}</button>
         ))}
       </div>
-      <div className="p-6 max-w-[1200px] mx-auto">
+      <div className="p-6 max-w- mx-auto">
         {tab==='mybooks' && (
           <div>
-            <div className="flex items-center gap-3 mb-6"><CoinLogo size={48}/><div><h1 className="font-serif-lux text-[26px] font-bold">My Books • Real from Supabase</h1><p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/60">Black & Gold • Total Ebooks: {myEbooks.length} • ebooks + covers buckets PUBLIC • For 5% THINKERS</p></div></div>
+            <div className="flex items-center gap-3 mb-6"><CoinLogo size={48}/><h1 className="font-serif-lux text- font-bold">My Books</h1></div>
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="rounded-[20px] bg-black border border-[#D4AF37]/20 overflow-hidden"><div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-black/50"><h2 className="font-serif-lux text-[16px] font-bold flex items-center gap-2"><CoinLogo size={20}/>My Ebooks • {myEbooks.length}</h2><button onClick={()=>setTab('ebooks')} className="h-7 px-3 rounded-full bg-[#D4AF37] text-black font-bold text-[10px] uppercase">Add Ebook</button></div><div className="p-3 space-y-2">{myEbooks.length===0&&<div className="p-6 text-center text-[12px] text-white/30">No ebooks yet • Publish first ebook from Create eBook tab • Real count from Supabase</div>}{myEbooks.map((b:any)=><div key={b.id} className="flex gap-3 p-3 rounded-[12px] bg-[#0A0A0A] border border-white/5"><img src={b.cover_url} className="w-12 h-16 rounded-[6px] object-cover border border-[#D4AF37]/20"/><div className="flex-1"><div className="font-serif-lux text-[13px] font-bold text-[#D4AF37]">{b.title}</div><div className="text-[11px] text-white/40">Rs.{b.mrp} • PDF: ebooks bucket • Cover: covers bucket</div></div><button className="h-6 px-2 rounded-full border border-white/10 text-[10px] uppercase">Edit</button></div>)}</div></div>
-              <div className="rounded-[20px] bg-black border border-[#D4AF37]/20 overflow-hidden"><div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-black/50"><h2 className="font-serif-lux text-[16px] font-bold flex items-center gap-2"><CoinLogo size={20}/>My Audiobooks</h2><button onClick={()=>setTab('audiobooks')} className="h-7 px-3 rounded-full bg-[#D4AF37] text-black font-bold text-[10px] uppercase">Add Audiobook</button></div><div className="p-8 text-center text-[12px] text-white/30">Audiobooks from Cloudinary bookuniverse/audio next — P4</div></div>
+              <div className="rounded- bg-black border border-[#D4AF37]/20 overflow-hidden"><div className="px-6 py-4 border-b border-white/5 flex items-center justify-between"><h2 className="font-serif-lux text- font-bold flex items-center gap-2"><CoinLogo size={20}/>Ebooks • {myEbooks.length}</h2><button onClick={()=>setTab('ebooks')} className="h-7 px-3 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase">Add</button></div><div className="p-3 space-y-2">{myEbooks.length===0&&<div className="p-6 text-center text- text-white/30">No ebooks yet</div>}{myEbooks.map((b:any)=><div key={b.id} className="flex gap-3 p-3 rounded- bg-[#0A0A0A] border border-white/5"><img src={b.cover_url} className="w-12 h-16 rounded- object-cover border border-[#D4AF37]/20"/><div className="flex-1"><div className="font-serif-lux text- font-bold text-[#D4AF37]">{b.title}</div><div className="text- text-white/40">Rs.{b.mrp}</div></div></div>)}</div></div>
+              <div className="rounded- bg-black border border-[#D4AF37]/20 p-8 text-center text- text-white/30">Audiobooks — Next</div>
             </div>
           </div>
         )}
         {tab==='ebooks' && (
-          <div className="rounded-[20px] bg-black border border-[#D4AF37]/20 p-6">
-            <div className="flex items-center gap-2 mb-2"><CoinLogo size={32}/><h2 className="font-serif-lux text-[22px] font-bold">Create eBook — Professional Publishing</h2></div>
-            <p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/60 mb-6">Black & Gold • Front Cover JPG = First Page • SHANMUGAVEL BOOKUNIVERSE • Coin Logo Mandatory • Hybrid Supabase</p>
+          <div className="rounded- bg-black border border-[#D4AF37]/20 p-6">
+            <div className="flex items-center gap-2 mb-6"><CoinLogo size={32}/><h2 className="font-serif-lux text- font-bold">Create eBook</h2></div>
             <div className="grid md:grid-cols-2 gap-6">
-              <div><label className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Title*</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="GUN STORY" className="mt-1 w-full h-11 px-4 rounded-[12px] bg-black border border-white/10 text-[13px]"/></div>
-              <div><label className="text-[11px] uppercase tracking-widest">MRP Rs*</label><input type="number" value={mrp} onChange={e=>setMrp(Number(e.target.value))} className="mt-1 w-full h-11 px-4 rounded-[12px] bg-black border border-white/10 text-[13px]"/></div>
-              <div className="md:col-span-2"><label className="text-[11px] uppercase tracking-widest text-[#D4AF37]">PDF REQUIRED* → Supabase Storage ebooks bucket PUBLIC as per screenshot</label><input type="file" accept=".pdf" onChange={e=>setPdfFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded-[12px] bg-black border border-[#D4AF37]/20 text-[12px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/></div>
-              <div className="md:col-span-2"><label className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Front Cover JPG MANDATORY First Page → covers bucket PUBLIC as per screenshot + Cloudinary</label><input type="file" accept="image/jpeg,image/jpg,image/png" onChange={e=>setCoverFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded-[12px] bg-black border border-[#D4AF37]/30 text-[12px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/><div className="mt-2 w-20 h-28 rounded-[8px] bg-black border border-[#D4AF37]/20 grid place-items-center">{coverFile?<img src={URL.createObjectURL(coverFile)} className="w-full h-full object-cover rounded-[8px]"/>:<CoinLogo size={40}/>}</div></div>
-              <div className="md:col-span-2"><label className="text-[11px] uppercase tracking-widest">Publisher</label><input defaultValue="SHANMUGAVEL BOOKUNIVERSE" className="mt-1 w-full h-11 px-4 rounded-[12px] bg-black border border-white/10 text-[13px]"/></div>
-              <div className="md:col-span-2"><label className="text-[11px] uppercase tracking-widest">Description — Fairy quote</label><textarea rows={3} defaultValue="World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy" className="mt-1 w-full p-4 rounded-[12px] bg-black border border-[#D4AF37]/20 text-[13px] italic text-[#D4AF37]"/></div>
+              <div><label className="text- uppercase tracking-widest text-[#D4AF37]">Title*</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Title" className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text- outline-none"/></div>
+              <div><label className="text- uppercase tracking-widest">MRP Rs*</label><input type="number" value={mrp} onChange={e=>setMrp(Number(e.target.value))} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text- outline-none"/></div>
+              <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">PDF File*</label><input type="file" accept=".pdf" onChange={e=>setPdfFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/20 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/></div>
+              <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">Front Cover JPG*</label><input type="file" accept="image/jpeg,image/jpg,image/png" onChange={e=>setCoverFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/30 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/><div className="mt-2 w-20 h-28 rounded- bg-black border border-[#D4AF37]/20 grid place-items-center overflow-hidden">{coverFile?<img src={URL.createObjectURL(coverFile)} className="w-full h-full object-cover"/>:<CoinLogo size={40}/>}</div></div>
             </div>
-            <div className="mt-8 flex gap-3"><button onClick={handlePublish} disabled={uploading} className="h-11 px-8 rounded-full bg-[#D4AF37] text-black font-bold text-[12px] uppercase flex items-center gap-2"><CoinLogo size={20}/>{uploading?'Uploading to ebooks + covers buckets...':'Publish • Hybrid • Front Cover=First Page'}</button></div>
-            <p className="text-[10px] text-white/30 mt-3">Your buckets ebooks + covers are PUBLIC as per screenshot — perfect for now — PDF will be in ebooks bucket, Cover in covers bucket, saved to ebooks table with Cloudinary ready</p>
+            <div className="mt-8"><button onClick={handlePublish} disabled={uploading} className="h-11 px-8 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase flex items-center gap-2"><CoinLogo size={20}/>{uploading?'Uploading...':'Publish'}</button></div>
           </div>
         )}
-        {tab==='audiobooks' && (<div className="rounded-[20px] bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={48} className="mx-auto"/><h2 className="mt-4 font-serif-lux text-[18px] font-bold">Create Audiobook — P4 Gold BIG BOX — Next</h2><p className="text-[11px] text-white/40 mt-2">Buckets ready • Cloudinary env only keys as you said — no dashboard work — folders auto-create on upload</p></div>)}
-        {tab==='dashboard' && (<div className="grid md:grid-cols-2 gap-6"><div className="rounded-[20px] bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={40} className="mx-auto mb-2"/><div className="text-[11px] uppercase text-[#D4AF37]/60">Total Ebooks</div><div className="text-[28px] font-bold">{myEbooks.length}</div><div className="text-[11px] text-white/30">Real from Supabase ebooks table</div></div><div className="rounded-[20px] bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={40} className="mx-auto mb-2"/><div className="text-[11px] uppercase text-[#D4AF37]/60">Storage Buckets</div><div className="text-[16px] font-bold">ebooks + covers PUBLIC</div><div className="text-[11px] text-white/30">As per your screenshot</div></div></div>)}
-        {tab==='founder' && (<div className="rounded-[20px] bg-black border border-[#D4AF37]/20 p-6"><div className="flex items-center gap-2 mb-4"><CoinLogo size={32}/><h2 className="font-serif-lux text-[20px] font-bold">Founder Vault — 3-Step Auth LIVE</h2></div><p className="text-[11px] uppercase text-[#D4AF37]/60">shanmugavelvetri@gmail.com / VelShanmugam@850 • Seal VELS5PERCENT • Coin Logo Mandatory</p></div>)}
+        {tab==='dashboard' && (<div className="grid md:grid-cols-2 gap-6"><div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><div className="text- uppercase text-[#D4AF37]/60">Total Ebooks</div><div className="text- font-bold">{myEbooks.length}</div></div><div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><div className="text- uppercase text-[#D4AF37]/60">Status</div><div className="text- font-bold">Live</div></div></div>)}
       </div>
     </div>
   )
