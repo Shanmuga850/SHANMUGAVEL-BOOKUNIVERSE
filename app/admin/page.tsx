@@ -27,19 +27,6 @@ export default function Admin() {
     }
   },[authed,tab])
 
-  // DIRECT UPLOAD - NO /api/upload - FIXES Failed to fetch!
-  async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
-    const safe = file.name.replace(/[^a-zA-Z0-9.]/g,'_').replace(/_+/g,'_')
-    const fileName = `${Date.now()}_${safe}`
-    const { error } = await supabase.storage.from(bucket).upload(fileName, file, {
-      contentType: file.type || 'application/octet-stream',
-      upsert: true
-    })
-    if(error) throw new Error(`${bucket} error: ${error.message}`)
-    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
-    return { url: data.publicUrl, path: fileName }
-  }
-
   async function handlePublish(){
     if(!title||!pdfFile||!coverFile) return alert('Title*, PDF*, Cover JPG Mandatory* - Front Cover=First Page')
     setUploading(true)
