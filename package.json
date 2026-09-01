@@ -19,7 +19,10 @@
     "pdf-lib": "^1.17.1",
     "howler": "^2.2.4",
     "razorpay": "^2.9.2",
-    "pdfjs-dist": "^4.4.168"
+    "pdfjs-dist": "^4.4.168",
+    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38"
   },
   "devDependencies": {
     "typescript": "^5",
