@@ -1,4 +1,4 @@
-[image]  "use client"
+"use client"
 import { useState, useEffect } from 'react'
 import { CoinLogo } from '@/components/CoinLogo'
 import { createClient } from '@supabase/supabase-js'
@@ -112,4 +112,4 @@ export default function Admin() {
       </div>
     </div>
   )
-}," ITS app/admin/page.tsx
+}
