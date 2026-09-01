@@ -25,86 +25,79 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      {/* Header with Logo Mandatory Everywhere */}
       <header className="sticky top-0 z-50 bg-black/80 backdrop-blur border-b border-white/10 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CoinLogo size={48} />
           <div>
-            <h1 className="font-serif-lux text-[20px] font-bold tracking-tight leading-none">SHANMUGAVEL BOOKUNIVERSE</h1>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[#D4AF37]/70">For 5% THINKERS • Coin Logo Mandatory</p>
+            <h1 className="font-serif-lux text- font-bold tracking-tight leading-none">SHANMUGAVEL BOOKUNIVERSE</h1>
+            <p className="text- tracking-[0.2em] uppercase text-[#D4AF37]/70">For 5% THINKERS</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search For 5% THINKERS..." className="h-9 px-4 rounded-full bg-white/5 border border-white/10 text-[12px] w-[220px]" />
-          <button onClick={()=>setView('about')} className="h-9 px-4 rounded-full border border-white/10 text-[11px] uppercase">About Founder</button>
-          <button onClick={()=>setView('cart')} className="h-9 px-4 rounded-full border border-[#D4AF37]/30 text-[11px] uppercase flex items-center gap-2">Cart • {cart.length} <CoinLogo size={20} /></button>
-          <a href="/admin" className="h-9 px-4 rounded-full gold-gradient text-black font-bold text-[11px] uppercase">Founder Vault</a>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." className="h-9 px-4 rounded-full bg-white/5 border border-white/10 text- w-" />
+          <button onClick={()=>setView('about')} className="h-9 px-4 rounded-full border border-white/10 text- uppercase">About</button>
+          <button onClick={()=>setView('cart')} className="h-9 px-4 rounded-full border border-[#D4AF37]/30 text- uppercase flex items-center gap-2">Cart • {cart.length}</button>
+          <a href="/admin" className="h-9 px-4 rounded-full gold-gradient text-black font-bold text- uppercase">Founder Vault</a>
         </div>
       </header>
 
       {view === 'home' && (
         <>
-          {/* Hero with Large Logo Center */}
-          <section className="py-12 text-center relative overflow-hidden">
+          <section className="py-16 text-center relative overflow-hidden">
             <LogoWatermark />
             <div className="relative">
               <div className="flex justify-center mb-6"><CoinLogo size={120} /></div>
-              <h2 className="font-serif-lux text-[42px] font-bold">For 5% THINKERS</h2>
-              <p className="text-[16px] italic text-[#D4AF37] mt-3 max-w-[600px] mx-auto">"World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy"</p>
-              <p className="text-[12px] uppercase tracking-widest text-white/50 mt-2">Founder: Shanmugavel M • READ/PLAY ONLY No Download • Front Cover JPG = First Page</p>
+              <h2 className="font-serif-lux text- font-bold">For 5% THINKERS</h2>
+              <p className="text- italic text-[#D4AF37] mt-3 max-w- mx-auto">"World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy"</p>
             </div>
           </section>
 
-          {/* Ebooks */}
           <section className="px-8 py-8">
-            <h3 className="font-serif-lux text-[22px] font-bold flex items-center gap-3"><CoinLogo size={32} />Ebooks — For 5% THINKERS <span className="text-[10px] uppercase tracking-widest text-[#D4AF37]/60">Cover = First Page • Sample Before Buy</span></h3>
+            <h3 className="font-serif-lux text- font-bold flex items-center gap-3"><CoinLogo size={32} />Ebooks</h3>
             <div className="grid grid-cols-4 gap-6 mt-6">
               {filteredEbooks.map(b=>(
-                <div key={b.id} onClick={()=>{setSelected(b); setView('ebook')}} className="rounded-[20px] black-gold-card p-3 cursor-pointer hover:border-[#D4AF37]/40 transition group relative overflow-hidden">
-                  <div className="absolute top-2 right-2"><CoinLogo size={24} /></div>
-                  <div className="w-full h-[180px] rounded-[12px] bg-[#0A0A0A] border border-[#D4AF37]/20 overflow-hidden flex items-center justify-center"><img src={b.cover} alt="" className="w-full h-full object-cover opacity-80" /></div>
-                  <div className="mt-3"><div className="font-serif-lux text-[14px] font-bold text-[#D4AF37]">{b.title}</div><div className="text-[11px] text-white/50">{b.authors.join(', ')} • Rs.{b.mrp} • {b.sku}</div><div className="mt-2 h-6 px-2 rounded-full border border-white/10 text-[10px] uppercase inline-flex items-center">Cover = 1st Page • READ ONLY • Shanmugavel M</div></div>
+                <div key={b.id} onClick={()=>{setSelected(b); setView('ebook')}} className="rounded- black-gold-card p-3 cursor-pointer hover:border-[#D4AF37]/40 transition group relative overflow-hidden">
+                  <div className="w-full h- rounded- bg-[#0A0A0A] border border-[#D4AF37]/20 overflow-hidden flex items-center justify-center"><img src={b.cover} alt="" className="w-full h-full object-cover opacity-80" /></div>
+                  <div className="mt-3"><div className="font-serif-lux text- font-bold text-[#D4AF37]">{b.title}</div><div className="text- text-white/50 mt-1">{b.authors.join(', ')} • Rs.{b.mrp}</div></div>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Audiobooks */}
           <section className="px-8 py-8">
-            <h3 className="font-serif-lux text-[22px] font-bold flex items-center gap-3"><CoinLogo size={32} />Audiobooks — Deep Listening <span className="text-[10px] uppercase tracking-widest text-[#D4AF37]/60">Howler.js Protected • Sample Audio</span></h3>
+            <h3 className="font-serif-lux text- font-bold flex items-center gap-3"><CoinLogo size={32} />Audiobooks</h3>
             <div className="grid grid-cols-3 gap-6 mt-6">
               {filteredAudio.map(b=>(
-                <div key={b.id} onClick={()=>{setSelected(b); setView('audiobook')}} className="rounded-[20px] black-gold-card p-4 cursor-pointer hover:border-[#D4AF37]/40 relative">
-                  <div className="absolute top-2 right-2"><CoinLogo size={24} /></div>
-                  <div className="flex gap-4"><div className="w-20 h-20 rounded-[12px] bg-black border border-[#D4AF37]/20 overflow-hidden"><img src={b.cover} alt="" className="w-full h-full object-cover" /></div><div><div className="font-serif-lux text-[16px] font-bold text-[#D4AF37]">{b.title}</div><div className="text-[11px] text-white/50">{b.author} • Narrator {b.narrator}</div><div className="text-[10px] uppercase text-white/30 mt-1">{b.chapters} chapters • Opening ✓ Ending ✓ • Howler.js • PLAY ONLY</div></div></div>
+                <div key={b.id} onClick={()=>{setSelected(b); setView('audiobook')}} className="rounded- black-gold-card p-4 cursor-pointer hover:border-[#D4AF37]/40 relative">
+                  <div className="flex gap-4"><div className="w-20 h-20 rounded- bg-black border border-[#D4AF37]/20 overflow-hidden"><img src={b.cover} alt="" className="w-full h-full object-cover" /></div><div><div className="font-serif-lux text- font-bold text-[#D4AF37]">{b.title}</div><div className="text- text-white/50">{b.author}</div><div className="text- text-white/30 mt-1">{b.chapters} Chapters</div></div></div>
                 </div>
               ))}
             </div>
           </section>
 
-          <footer className="border-t border-white/10 py-8 text-center"><div className="flex justify-center mb-3"><CoinLogo size={56} /></div><div className="text-[11px] uppercase tracking-widest text-[#D4AF37]">SHANMUGAVEL BOOKUNIVERSE • For 5% THINKERS • Shanmugavel M • Coin Logo Mandatory</div><div className="text-[10px] text-white/30 mt-1">READ/PLAY ONLY No Download • PDF.js + Howler.js Protected • Front Cover JPG = First Page</div></footer>
+          <footer className="border-t border-white/10 py-8 text-center"><div className="flex justify-center mb-3"><CoinLogo size={56} /></div><div className="text- uppercase tracking-widest text-[#D4AF37]">SHANMUGAVEL BOOKUNIVERSE • For 5% THINKERS • Shanmugavel M</div></footer>
         </>
       )}
 
       {view === 'ebook' && selected && (
-        <div className="p-8 max-w-[1200px] mx-auto">
-          <button onClick={()=>setView('home')} className="h-9 px-4 rounded-full border border-white/10 text-[11px] uppercase mb-6">← Back to Home</button>
+        <div className="p-8 max-w- mx-auto">
+          <button onClick={()=>setView('home')} className="h-9 px-4 rounded-full border border-white/10 text- uppercase mb-6">← Back</button>
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="rounded-[20px] black-gold-card p-6 relative min-h-[500px]"><LogoWatermark /><div className="relative"><div className="flex items-center gap-2 mb-4"><CoinLogo size={32} /><span className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Ebook • Cover = First Page • SHANMUGAVEL BOOKUNIVERSE</span></div><div className="w-full h-[420px] bg-black border border-[#D4AF37]/20 rounded-[12px] grid place-items-center text-[12px] text-white/30">PDF.js Protected Viewer<br/>Sample Pages {1}-{10} Free<br/>Full After Purchase READ ONLY<br/>No Download<br/><CoinLogo size={80} className="mt-4" /></div></div></div>
-            <div><h1 className="font-serif-lux text-[32px] font-bold text-[#D4AF37]">{selected.title}</h1><p className="text-white/60 text-[13px] mt-2">{selected.authors?.join(', ')} • Rs.{selected.mrp} • {selected.sku}</p><div className="mt-6 flex gap-2"><button onClick={()=>setCart([...cart, selected])} className="h-11 px-6 rounded-full gold-gradient text-black font-bold text-[12px] uppercase">Add to Cart • READ ONLY</button><button className="h-11 px-6 rounded-full border border-white/10 text-[11px] uppercase">Sample Before Buy Free</button></div><div className="mt-8 text-[12px] italic text-[#D4AF37]">"World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy"</div></div>
+            <div className="rounded- black-gold-card p-6 relative min-h-"><LogoWatermark /><div className="relative"><div className="w-full h- bg-black border border-[#D4AF37]/20 rounded- grid place-items-center text- text-white/30">PDF Preview<br/><CoinLogo size={80} className="mt-4" /></div></div></div>
+            <div><h1 className="font-serif-lux text- font-bold text-[#D4AF37]">{selected.title}</h1><p className="text-white/60 text- mt-2">{selected.authors?.join(', ')} • Rs.{selected.mrp}</p><div className="mt-6 flex gap-2"><button onClick={()=>setCart([...cart, selected])} className="h-11 px-6 rounded-full gold-gradient text-black font-bold text- uppercase">Add to Cart</button><button className="h-11 px-6 rounded-full border border-white/10 text- uppercase">Sample</button></div></div>
           </div>
         </div>
       )}
 
       {view === 'audiobook' && selected && (
-        <div className="p-8 max-w-[1200px] mx-auto">
-          <button onClick={()=>setView('home')} className="h-9 px-4 rounded-full border border-white/10 text-[11px] uppercase mb-6">← Back</button>
-          <div className="rounded-[20px] black-gold-card p-6 relative"><LogoWatermark /><div className="relative"><div className="flex items-center gap-2"><CoinLogo size={32} /><span className="text-[11px] uppercase tracking-widest text-[#D4AF37]">Audiobook • Howler.js Protected • SHANMUGAVEL BOOKUNIVERSE</span></div><div className="mt-6 grid md:grid-cols-2 gap-6"><div className="h-[300px] bg-black rounded-[12px] border border-[#D4AF37]/20 grid place-items-center"><CoinLogo size={100} /><div className="text-[11px] uppercase text-white/30 mt-4">Howler.js Protected Player<br/>Opening • Chapters Max 15 (01,02,03) • Ending<br/>PLAY ONLY No Download</div></div><div><h2 className="font-serif-lux text-[28px] font-bold text-[#D4AF37]">{selected.title}</h2><p className="text-white/50 text-[12px]">Narrator {selected.narrator} • {selected.chapters} chapters</p><div className="mt-4 space-y-2">{Array.from({length:5}).map((_,i)=><div key={i} className="h-10 rounded-full bg-white/5 border border-white/10 flex items-center px-4 text-[11px]">{String(i+1).padStart(2,'0')} • Chapter Title {i+1} <span className="ml-auto"><CoinLogo size={20} /></span></div>)}</div><button onClick={()=>setCart([...cart, selected])} className="mt-6 h-11 px-6 rounded-full gold-gradient text-black font-bold text-[12px] uppercase w-full">Add to Cart • PLAY ONLY</button></div></div></div></div>
+        <div className="p-8 max-w- mx-auto">
+          <button onClick={()=>setView('home')} className="h-9 px-4 rounded-full border border-white/10 text- uppercase mb-6">← Back</button>
+          <div className="rounded- black-gold-card p-6 relative"><LogoWatermark /><div className="relative"><h2 className="font-serif-lux text- font-bold text-[#D4AF37]">{selected.title}</h2><p className="text-white/50 text-">{selected.narrator} • {selected.chapters} chapters</p><button onClick={()=>setCart([...cart, selected])} className="mt-6 h-11 px-6 rounded-full gold-gradient text-black font-bold text- uppercase w-full">Add to Cart</button></div></div>
         </div>
       )}
 
       {view === 'cart' && (
-        <div className="p-8 max-w-[600px] mx-auto text-center"><CoinLogo size={80} className="mx-auto mb-4" /><h2 className="font-serif-lux text-[28px] font-bold">Cart</h2>{cart.length===0?<p className="text-white/30 text-[12px] mt-4">Cart empty • Add books to read</p>:<div className="mt-6 space-y-3">{cart.map((c,i)=><div key={i} className="flex items-center gap-3 p-3 rounded-[12px] black-gold-card"><CoinLogo size={40} /><div className="text-left"><div className="text-[13px] font-bold text-[#D4AF37]">{c.title}</div><div className="text-[11px] text-white/40">Rs.{c.mrp}</div></div></div>)}<div className="mt-6 h-12 rounded-full gold-gradient text-black font-bold grid place-items-center">Checkout via Razorpay • UPI success@razorpay</div></div>}</div>
+        <div className="p-8 max-w- mx-auto text-center"><CoinLogo size={80} className="mx-auto mb-4" /><h2 className="font-serif-lux text- font-bold">Cart</h2>{cart.length===0?<p className="text-white/30 text- mt-4">Cart empty</p>:<div className="mt-6 space-y-3">{cart.map((c,i)=><div key={i} className="flex items-center gap-3 p-3 rounded- black-gold-card"><CoinLogo size={40} /><div className="text-left"><div className="text- font-bold text-[#D4AF37]">{c.title}</div><div className="text- text-white/40">Rs.{c.mrp}</div></div></div>)}<div className="mt-6 h-12 rounded-full gold-gradient text-black font-bold grid place-items-center">Checkout via Razorpay</div></div>}</div>
       )}
     </div>
   )
