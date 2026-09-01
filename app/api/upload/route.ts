@@ -1,36 +1,44 @@
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const maxDuration = 60
+
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest){
   try{
-    if (process.env.CLOUDINARY_URL && !process.env.CLOUDINARY_URL.startsWith('cloudinary://')) {
-      delete process.env.CLOUDINARY_URL
-    }
-    const { getCloudinary } = await import('@/lib/cloudinary')
-    const cloudinary = getCloudinary()
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    
     const form = await req.formData()
     const file = form.get('file') as File
     const type = form.get('type') as string
+
+    if(!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
+    
     const buffer = Buffer.from(await file.arrayBuffer())
-    if(type === 'pdf'){
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g,'')}`
-      const { error } = await supabase.storage.from('ebooks').upload(fileName, buffer, { contentType: file.type })
-      if(error) return NextResponse.json({ error: error.message }, { status: 500 })
-      const { data } = supabase.storage.from('ebooks').getPublicUrl(fileName)
-      return NextResponse.json({ url: data.publicUrl, path: fileName })
-    } else {
-      const folder = type === 'cover'? 'bookuniverse/covers' : 'bookuniverse/audio'
-      const result: any = await new Promise((resolve, reject)=>{
-        cloudinary.uploader.upload_stream({ folder, resource_type: 'auto' }, (err:any, res:any)=> err? reject(err) : resolve(res)).end(buffer)
-      })
-      if(type === 'cover'){
-        try{ await supabase.storage.from('covers').upload(`${Date.now()}-${file.name}`, buffer, { contentType: file.type }) }catch{}
-      }
-      return NextResponse.json({ url: result.secure_url, public_id: result.public_id })
+    const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g,'_')}`
+    
+    let bucket = 'ebooks'
+    if(type === 'cover') bucket = 'covers'
+    if(type === 'audio') bucket = 'ebooks' // temp store audio in ebooks too for test
+
+    const { error } = await supabase.storage.from(bucket).upload(fileName, buffer, {
+      contentType: file.type || 'application/octet-stream',
+      upsert: true
+    })
+
+    if(error){
+      console.error('Supabase upload error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
+    return NextResponse.json({ url: data.publicUrl, path: fileName })
   }catch(e:any){
+    console.error('Route crash:', e)
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
