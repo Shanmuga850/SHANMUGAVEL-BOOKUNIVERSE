@@ -26,39 +26,45 @@ export default function Admin() {
     }
   },[authed,tab])
 
-  // NEW HYBRID UPLOAD - uses YOUR existing app/api/upload/route.ts
-  async function uploadViaApi(file: File, type: string){
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('type', type)
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const json = await res.json()
-    if(!res.ok) throw new Error(json.error || 'Upload API failed')
-    return json // { url, path }
+  // DIRECT UPLOAD - NO /api/upload - FIXES Failed to fetch!
+  async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
+    const safe = file.name.replace(/[^a-zA-Z0-9.]/g,'_').replace(/_+/g,'_')
+    const fileName = `${Date.now()}_${safe}`
+    const { error } = await supabase.storage.from(bucket).upload(fileName, file, {
+      contentType: file.type || 'application/octet-stream',
+      upsert: true
+    })
+    if(error) throw new Error(`${bucket} error: ${error.message}`)
+    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
+    return { url: data.publicUrl, path: fileName }
   }
 
   async function handlePublish(){
     if(!title||!pdfFile||!coverFile) return alert('Title*, PDF*, Cover JPG Mandatory* - Front Cover=First Page')
     setUploading(true)
     try{
-      // 1. Upload PDF -> ebooks bucket via YOUR API (service_role bypasses Failed to fetch)
-      const pdfRes = await uploadViaApi(pdfFile, 'ebook')
-      // 2. Upload Cover -> covers bucket via YOUR API
-      const coverRes = await uploadViaApi(coverFile, 'cover')
+      // DIRECT to Supabase - bypass Vercel API!
+      const pdfRes = await uploadDirect(pdfFile, 'ebooks')
+      const coverRes = await uploadDirect(coverFile, 'covers')
 
       const { error } = await supabase.from('ebooks').insert({
-        title, pdf_url: pdfRes.url, pdf_path: pdfRes.path,
-        cover_url: coverRes.url, cover_public_id: null,
-        mrp, authors: ['Shanmugavel M'],
+        title,
+        pdf_url: pdfRes.url,
+        pdf_path: pdfRes.path,
+        cover_url: coverRes.url,
+        cover_path: coverRes.path,
+        cover_public_id: null,
+        mrp,
+        authors: ['Shanmugavel M'],
         publisher: 'SHANMUGAVEL BOOKUNIVERSE',
         description: 'World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy'
       })
       if(error) throw error
-      alert('Published! PDF->ebooks bucket + Cover->covers bucket — P3 LIVE!')
+      alert('Published! PDF->ebooks bucket + Cover->covers bucket — DIRECT UPLOAD LIVE!')
       setTitle(''); setPdfFile(null); setCoverFile(null); setTab('mybooks')
       const { data } = await supabase.from('ebooks').select('*').order('created_at',{ascending:false})
       setMyEbooks(data||[])
-    }catch(e:any){ alert('Upload failed: '+e.message) }
+    }catch(e:any){ alert('Upload failed: '+e.message); console.error(e) }
     setUploading(false)
   }
 
@@ -80,7 +86,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <header className="sticky top-0 bg-black/80 backdrop-blur border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3"><CoinLogo size={48} /><div><h1 className="font-serif-lux text- font-bold">SHANMUGAVEL BOOKUNIVERSE • Founder Vault</h1><p className="text- uppercase tracking-widest text-[#D4AF37]/60">Unlocked • P2 DONE • Hybrid Supabase + Cloudinary • Coin Logo Mandatory</p></div></div>
+        <div className="flex items-center gap-3"><CoinLogo size={48} /><div><h1 className="font-serif-lux text- font-bold">SHANMUGAVEL BOOKUNIVERSE • Founder Vault</h1><p className="text- uppercase tracking-widest text-[#D4AF37]/60">Unlocked • P2 DONE • DIRECT SUPABASE UPLOAD • Coin Logo Mandatory</p></div></div>
         <div className="flex items-center gap-2"><span className="h-7 px-3 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/30 text- uppercase flex items-center gap-2"><CoinLogo size={16}/>Vault Live</span><a href="/" className="h-9 px-4 rounded-full border border-white/10 text- uppercase grid place-items-center">User View</a></div>
       </header>
       <div className="px-6 py-4 flex flex-wrap gap-2 border-b border-white/10">
@@ -100,22 +106,22 @@ export default function Admin() {
         )}
         {tab==='ebooks' && (
           <div className="rounded- bg-black border border-[#D4AF37]/20 p-6">
-            <div className="flex items-center gap-2 mb-2"><CoinLogo size={32}/><h2 className="font-serif-lux text- font-bold">Create eBook — Professional Publishing</h2></div>
-            <p className="text- uppercase tracking-widest text-[#D4AF37]/60 mb-6">Black & Gold • Front Cover JPG = First Page • SHANMUGAVEL BOOKUNIVERSE • Coin Logo Mandatory • Hybrid Supabase</p>
+            <div className="flex items-center gap-2 mb-2"><CoinLogo size={32}/><h2 className="font-serif-lux text- font-bold">Create eBook — Professional Publishing — DIRECT UPLOAD</h2></div>
+            <p className="text- uppercase tracking-widest text-[#D4AF37]/60 mb-6">Black & Gold • Front Cover JPG = First Page • SHANMUGAVEL BOOKUNIVERSE • Coin Logo Mandatory • DIRECT Supabase</p>
             <div className="grid md:grid-cols-2 gap-6">
               <div><label className="text- uppercase tracking-widest text-[#D4AF37]">Title*</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="GUN STORY" className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text-"/></div>
               <div><label className="text- uppercase tracking-widest">MRP Rs*</label><input type="number" value={mrp} onChange={e=>setMrp(Number(e.target.value))} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text-"/></div>
-              <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">PDF REQUIRED* → Supabase Storage ebooks bucket PUBLIC as per screenshot</label><input type="file" accept=".pdf" onChange={e=>setPdfFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/20 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/></div>
-              <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">Front Cover JPG MANDATORY First Page → covers bucket PUBLIC as per screenshot + Cloudinary</label><input type="file" accept="image/jpeg,image/jpg,image/png" onChange={e=>setCoverFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/30 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/><div className="mt-2 w-20 h-28 rounded- bg-black border border-[#D4AF37]/20 grid place-items-center">{coverFile?<img src={URL.createObjectURL(coverFile)} className="w-full h-full object-cover rounded-"/>:<CoinLogo size={40}/>}</div></div>
+              <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">PDF REQUIRED* → DIRECT to ebooks bucket</label><input type="file" accept=".pdf" onChange={e=>setPdfFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/20 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/></div>
+              <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">Front Cover JPG MANDATORY → DIRECT to covers bucket</label><input type="file" accept="image/jpeg,image/jpg,image/png" onChange={e=>setCoverFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/30 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/><div className="mt-2 w-20 h-28 rounded- bg-black border border-[#D4AF37]/20 grid place-items-center">{coverFile?<img src={URL.createObjectURL(coverFile)} className="w-full h-full object-cover rounded-"/>:<CoinLogo size={40}/>}</div></div>
               <div className="md:col-span-2"><label className="text- uppercase tracking-widest">Publisher</label><input defaultValue="SHANMUGAVEL BOOKUNIVERSE" className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text-"/></div>
               <div className="md:col-span-2"><label className="text- uppercase tracking-widest">Description — Fairy quote</label><textarea rows={3} defaultValue="World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy" className="mt-1 w-full p-4 rounded- bg-black border border-[#D4AF37]/20 text- italic text-[#D4AF37]"/></div>
             </div>
-            <div className="mt-8 flex gap-3"><button onClick={handlePublish} disabled={uploading} className="h-11 px-8 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase flex items-center gap-2"><CoinLogo size={20}/>{uploading?'Uploading to ebooks + covers buckets...':'Publish • Hybrid • Front Cover=First Page'}</button></div>
-            <p className="text- text-white/30 mt-3">Your buckets ebooks + covers are PUBLIC as per screenshot — perfect for now — PDF will be in ebooks bucket, Cover in covers bucket, saved to ebooks table with Cloudinary ready</p>
+            <div className="mt-8 flex gap-3"><button onClick={handlePublish} disabled={uploading} className="h-11 px-8 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase flex items-center gap-2"><CoinLogo size={20}/>{uploading?'Uploading DIRECT to Supabase...':'Publish • DIRECT • Front Cover=First Page'}</button></div>
+            <p className="text- text-white/30 mt-3">DIRECT UPLOAD — No /api/upload — bypasses Vercel Failed to fetch — PDF → ebooks, Cover → covers</p>
           </div>
         )}
-        {tab==='audiobooks' && (<div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={48} className="mx-auto"/><h2 className="mt-4 font-serif-lux text- font-bold">Create Audiobook — P4 Gold BIG BOX — Next</h2><p className="text- text-white/40 mt-2">Buckets ready • Cloudinary env only keys as you said — no dashboard work — folders auto-create on upload</p></div>)}
-        {tab==='dashboard' && (<div className="grid md:grid-cols-2 gap-6"><div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={40} className="mx-auto mb-2"/><div className="text- uppercase text-[#D4AF37]/60">Total Ebooks</div><div className="text- font-bold">{myEbooks.length}</div><div className="text- text-white/30">Real from Supabase ebooks table</div></div><div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={40} className="mx-auto mb-2"/><div className="text- uppercase text-[#D4AF37]/60">Storage Buckets</div><div className="text- font-bold">ebooks + covers PUBLIC</div><div className="text- text-white/30">As per your screenshot</div></div></div>)}
+        {tab==='audiobooks' && (<div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={48} className="mx-auto"/><h2 className="mt-4 font-serif-lux text- font-bold">Create Audiobook — P4 Gold BIG BOX — Next</h2></div>)}
+        {tab==='dashboard' && (<div className="grid md:grid-cols-2 gap-6"><div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={40} className="mx-auto mb-2"/><div className="text- uppercase text-[#D4AF37]/60">Total Ebooks</div><div className="text- font-bold">{myEbooks.length}</div></div><div className="rounded- bg-black border border-[#D4AF37]/20 p-6 text-center"><CoinLogo size={40} className="mx-auto mb-2"/><div className="text- uppercase text-[#D4AF37]/60">Storage Buckets</div><div className="text- font-bold">ebooks + covers PUBLIC • DIRECT</div></div></div>)}
         {tab==='founder' && (<div className="rounded- bg-black border border-[#D4AF37]/20 p-6"><div className="flex items-center gap-2 mb-4"><CoinLogo size={32}/><h2 className="font-serif-lux text- font-bold">Founder Vault — 3-Step Auth LIVE</h2></div><p className="text- uppercase text-[#D4AF37]/60">shanmugavelvetri@gmail.com / VelShanmugam@850 • Seal VELS5PERCENT • Coin Logo Mandatory</p></div>)}
       </div>
     </div>
