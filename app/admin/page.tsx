@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { CoinLogo } from '@/components/CoinLogo'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+const cleanUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '')
+const supabase = createClient(cleanUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export default function Admin() {
   const [step, setStep] = useState(1)
