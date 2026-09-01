@@ -26,20 +26,26 @@ export default function Admin() {
     }
   },[authed,tab])
 
-  async function uploadToBucket(file: File, bucket: string){
-    const name = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g,'')}`
-    const { error } = await supabase.storage.from(bucket).upload(name, file)
-    if(error) throw error
-    const { data } = supabase.storage.from(bucket).getPublicUrl(name)
-    return { url: data.publicUrl, path: name }
+  // NEW HYBRID UPLOAD - uses YOUR existing app/api/upload/route.ts
+  async function uploadViaApi(file: File, type: string){
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('type', type)
+    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    const json = await res.json()
+    if(!res.ok) throw new Error(json.error || 'Upload API failed')
+    return json // { url, path }
   }
 
   async function handlePublish(){
     if(!title||!pdfFile||!coverFile) return alert('Title*, PDF*, Cover JPG Mandatory* - Front Cover=First Page')
     setUploading(true)
     try{
-      const pdfRes = await uploadToBucket(pdfFile,'ebooks')
-      const coverRes = await uploadToBucket(coverFile,'covers')
+      // 1. Upload PDF -> ebooks bucket via YOUR API (service_role bypasses Failed to fetch)
+      const pdfRes = await uploadViaApi(pdfFile, 'ebook')
+      // 2. Upload Cover -> covers bucket via YOUR API
+      const coverRes = await uploadViaApi(coverFile, 'cover')
+
       const { error } = await supabase.from('ebooks').insert({
         title, pdf_url: pdfRes.url, pdf_path: pdfRes.path,
         cover_url: coverRes.url, cover_public_id: null,
@@ -48,8 +54,10 @@ export default function Admin() {
         description: 'World is a fantasy, My books are fairies, let my fairy guide you to explore the fantasy'
       })
       if(error) throw error
-      alert('Published! PDF->ebooks bucket + Cover->covers bucket + Cloudinary ready - Coin Logo Mandatory')
+      alert('Published! PDF->ebooks bucket + Cover->covers bucket — P3 LIVE!')
       setTitle(''); setPdfFile(null); setCoverFile(null); setTab('mybooks')
+      const { data } = await supabase.from('ebooks').select('*').order('created_at',{ascending:false})
+      setMyEbooks(data||[])
     }catch(e:any){ alert('Upload failed: '+e.message) }
     setUploading(false)
   }
