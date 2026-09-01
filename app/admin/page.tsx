@@ -28,9 +28,8 @@ export default function Admin() {
   },[authed,tab])
 
   async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
-    const base = file.name.split('.').slice(0,-1).join('_').replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').toLowerCase()
-    const ext = file.name.split('.').pop()?.toLowerCase() || (bucket==='ebooks'?'pdf':'jpg')
-    const fileName = `${Date.now()}_${base}.${ext}`
+    const ext = bucket==='ebooks' ? 'pdf' : 'jpg'
+    const fileName = `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`
     const { error } = await supabase.storage.from(bucket).upload(fileName, file, { contentType: file.type || 'application/octet-stream', upsert: true })
     if(error) throw new Error(`${bucket} error: ${error.message}`)
     const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
