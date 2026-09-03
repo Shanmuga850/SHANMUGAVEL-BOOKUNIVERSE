@@ -27,15 +27,14 @@ export default function Admin() {
     }
   },[authed,tab])
 
-  // FIXED - Uses /api/upload with SERVICE_ROLE - No more Failed to fetch!
   async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
     const fd = new FormData()
     fd.append('file', file)
-    fd.append('type', bucket==='ebooks'? 'ebook' : 'cover')
+    fd.append('type', bucket==='ebooks' ? 'ebook' : 'cover')
     const res = await fetch('/api/upload', { method:'POST', body: fd })
     const json = await res.json()
     if(!res.ok) throw new Error(json.error || 'Upload API failed')
-    return json // { url, path }
+    return json
   }
 
   async function handlePublish(){
