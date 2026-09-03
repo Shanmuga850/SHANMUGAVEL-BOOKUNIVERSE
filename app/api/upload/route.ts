@@ -1,33 +1,50 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: Request){
   try{
     const raw = (process.env.NEXT_PUBLIC_SUPABASE_URL||'').trim()
-    const url = raw.replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'')
+    const cleanUrl = raw.replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'')
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY||'').trim()
-    if(!url || !serviceKey) return NextResponse.json({error:'Missing ENV keys'},{status:500})
+    
+    if(!cleanUrl || !serviceKey){
+      return NextResponse.json({error:'ENV missing: URL or SERVICE_ROLE_KEY not set in Vercel'}, {status:500})
+    }
 
-    const supabase = createClient(url, serviceKey)
     const form = await req.formData()
     const file = form.get('file') as File
     const type = form.get('type') as string
+    if(!file) return NextResponse.json({error:'No file received'}, {status:400})
+
     const bucket = type==='cover' ? 'covers' : 'ebooks'
-    
-    const fileName = `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${bucket==='ebooks'?'pdf':'jpg'}`
+    const ext = bucket==='ebooks' ? 'pdf' : 'jpg'
+    const fileName = `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    const { error } = await supabase.storage.from(bucket).upload(fileName, buffer, {
-      contentType: file.type || 'application/octet-stream',
-      upsert: true
-    })
-    if(error) throw new Error(error.message)
+    // DIRECT REST upload - No supabase-js - No fetch failed!
+    const uploadUrl = `${cleanUrl}/storage/v1/object/${bucket}/${fileName}`
     
-    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
-    return NextResponse.json({ url: data.publicUrl, path: fileName })
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+        'x-upsert': 'true',
+        'Content-Type': file.type || (bucket==='ebooks'?'application/pdf':'image/jpeg')
+      },
+      body: buffer
+    })
+
+    if(!uploadRes.ok){
+      const errText = await uploadRes.text()
+      return NextResponse.json({error:`Supabase storage error: ${uploadRes.status} ${errText}`},{status:400})
+    }
+
+    const publicUrl = `${cleanUrl}/storage/v1/object/public/${bucket}/${fileName}`
+    return NextResponse.json({ url: publicUrl, path: fileName })
+
   }catch(e:any){
-    return NextResponse.json({ error: e.message }, {status:500})
+    return NextResponse.json({error:`Server crash: ${e.message}`},{status:500})
   }
 }
