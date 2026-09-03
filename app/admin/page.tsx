@@ -27,15 +27,14 @@ export default function Admin() {
     }
   },[authed,tab])
 
-  async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('type', bucket==='ebooks' ? 'ebook' : 'cover')
-    const res = await fetch('/api/upload', { method:'POST', body: fd })
-    const json = await res.json()
-    if(!res.ok) throw new Error(json.error || 'Upload API failed')
-    return json
-  }
+async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
+  const ext = bucket==='ebooks' ? 'pdf' : 'jpg'
+  const fileName = `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`
+  const { error } = await supabase.storage.from(bucket).upload(fileName, file, { upsert: true })
+  if(error) throw new Error(error.message)
+  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
+  return { url: data.publicUrl, path: fileName }
+}
 
   async function handlePublish(){
     if(!title||!pdfFile||!coverFile) return alert('Title*, PDF*, Cover JPG Mandatory*')
