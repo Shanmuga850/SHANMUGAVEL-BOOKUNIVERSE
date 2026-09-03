@@ -1,50 +1,54 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { v2 as cloudinary } from 'cloudinary'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export async function POST(req: Request){
   try{
-    const raw = (process.env.NEXT_PUBLIC_SUPABASE_URL||'').trim()
-    const cleanUrl = raw.replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'')
-    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY||'').trim()
-    
-    if(!cleanUrl || !serviceKey){
-      return NextResponse.json({error:'ENV missing: URL or SERVICE_ROLE_KEY not set in Vercel'}, {status:500})
-    }
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim().replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'')
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!.trim()
+    const supabase = createClient(url, serviceKey, { auth:{ persistSession:false } })
 
     const form = await req.formData()
     const file = form.get('file') as File
-    const type = form.get('type') as string
-    if(!file) return NextResponse.json({error:'No file received'}, {status:400})
+    const type = form.get('type') as string // ebook, cover, audiobook, audio-opening, audio-chapter, audio-ending
+    if(!file) return NextResponse.json({error:'No file'}, {status:400})
 
-    const bucket = type==='cover' ? 'covers' : 'ebooks'
-    const ext = bucket==='ebooks' ? 'pdf' : 'jpg'
+    let bucket = 'ebooks'
+    if(type?.includes('cover')) bucket = 'covers'
+    if(type?.includes('audio')) bucket = 'audiobooks'
+
+    const ext = file.name.split('.').pop() || (bucket==='covers'?'jpg': bucket==='audiobooks'?'mp3':'pdf')
     const fileName = `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const ab = await file.arrayBuffer()
 
-    // DIRECT REST upload - No supabase-js - No fetch failed!
-    const uploadUrl = `${cleanUrl}/storage/v1/object/${bucket}/${fileName}`
-    
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${serviceKey}`,
-        'apikey': serviceKey,
-        'x-upsert': 'true',
-        'Content-Type': file.type || (bucket==='ebooks'?'application/pdf':'image/jpeg')
-      },
-      body: buffer
-    })
+    // 1. Upload to Supabase (Mumbai or Washington)
+    const { error } = await supabase.storage.from(bucket).upload(fileName, ab, { contentType: file.type, upsert:true })
+    if(error) return NextResponse.json({error:error.message},{status:400})
+    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
 
-    if(!uploadRes.ok){
-      const errText = await uploadRes.text()
-      return NextResponse.json({error:`Supabase storage error: ${uploadRes.status} ${errText}`},{status:400})
+    // 2. If cover → also upload to Cloudinary auto-folder bookuniverse/covers
+    let cloudinaryUrl = null
+    if(bucket==='covers'){
+      const buf = Buffer.from(ab)
+      const uploadRes: any = await new Promise((resolve,reject)=>{
+        cloudinary.uploader.upload_stream({ folder: 'bookuniverse/covers', public_id: fileName.replace(/\.[^/.]+$/, ''), resource_type:'image' },
+        (err,res)=> err?reject(err):resolve(res)).end(buf)
+      })
+      cloudinaryUrl = uploadRes.secure_url
     }
 
-    const publicUrl = `${cleanUrl}/storage/v1/object/public/${bucket}/${fileName}`
-    return NextResponse.json({ url: publicUrl, path: fileName })
+    return NextResponse.json({ url: data.publicUrl, path: fileName, cloudinaryUrl, bucket })
 
   }catch(e:any){
-    return NextResponse.json({error:`Server crash: ${e.message}`},{status:500})
+    return NextResponse.json({error:e.message},{status:500})
   }
 }
