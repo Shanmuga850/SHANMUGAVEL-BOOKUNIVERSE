@@ -27,13 +27,15 @@ export default function Admin() {
     }
   },[authed,tab])
 
+  // FIXED - Uses /api/upload with SERVICE_ROLE - No more Failed to fetch!
   async function uploadDirect(file: File, bucket: 'ebooks' | 'covers'){
-    const ext = bucket==='ebooks' ? 'pdf' : 'jpg'
-    const fileName = `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`
-    const { error } = await supabase.storage.from(bucket).upload(fileName, file, { contentType: file.type || 'application/octet-stream', upsert: true })
-    if(error) throw new Error(`${bucket} error: ${error.message}`)
-    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
-    return { url: data.publicUrl, path: fileName }
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('type', bucket==='ebooks'? 'ebook' : 'cover')
+    const res = await fetch('/api/upload', { method:'POST', body: fd })
+    const json = await res.json()
+    if(!res.ok) throw new Error(json.error || 'Upload API failed')
+    return json // { url, path }
   }
 
   async function handlePublish(){
@@ -76,7 +78,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <header className="sticky top-0 bg-black/80 backdrop-blur border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3"><CoinLogo size={48} /><div><h1 className="font-serif-lux text- font-bold">SHANMUGAVEL BOOKUNIVERSE • Founder Vault</h1><p className="text- uppercase tracking-widest text-[#D4AF37]/60">DIRECT SUPABASE UPLOAD LIVE</p></div></div>
+        <div className="flex items-center gap-3"><CoinLogo size={48} /><div><h1 className="font-serif-lux text- font-bold">SHANMUGAVEL BOOKUNIVERSE • Founder Vault</h1><p className="text- uppercase tracking-widest text-[#D4AF37]/60">API UPLOAD LIVE - FIXED</p></div></div>
         <div className="flex items-center gap-2"><span className="h-7 px-3 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/30 text- uppercase flex items-center gap-2"><CoinLogo size={16}/>Vault Live</span><a href="/" className="h-9 px-4 rounded-full border border-white/10 text- uppercase grid place-items-center">User View</a></div>
       </header>
       <div className="px-6 py-4 flex flex-wrap gap-2 border-b border-white/10">
@@ -96,14 +98,14 @@ export default function Admin() {
         )}
         {tab==='ebooks' && (
           <div className="rounded- bg-black border border-[#D4AF37]/20 p-6">
-            <h2 className="font-serif-lux text- font-bold">Create eBook — DIRECT UPLOAD</h2>
+            <h2 className="font-serif-lux text- font-bold">Create eBook — API UPLOAD FIXED</h2>
             <div className="grid md:grid-cols-2 gap-6 mt-6">
               <div><label className="text- uppercase tracking-widest text-[#D4AF37]">Title*</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="GUN STORY" className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text-"/></div>
               <div><label className="text- uppercase tracking-widest">MRP Rs*</label><input type="number" value={mrp} onChange={e=>setMrp(Number(e.target.value))} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-white/10 text-"/></div>
               <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">PDF REQUIRED* → ebooks bucket</label><input type="file" accept=".pdf" onChange={e=>setPdfFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/20 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/></div>
               <div className="md:col-span-2"><label className="text- uppercase tracking-widest text-[#D4AF37]">Cover JPG* → covers bucket</label><input type="file" accept="image/*" onChange={e=>setCoverFile(e.target.files?.[0]||null)} className="mt-1 w-full h-11 px-4 rounded- bg-black border border-[#D4AF37]/30 text- file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-[#D4AF37] file:text-black file:font-bold"/></div>
             </div>
-            <div className="mt-8 flex gap-3"><button onClick={handlePublish} disabled={uploading} className="h-11 px-8 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase flex items-center gap-2"><CoinLogo size={20}/>{uploading?'Uploading...':'Publish • DIRECT'}</button></div>
+            <div className="mt-8 flex gap-3"><button onClick={handlePublish} disabled={uploading} className="h-11 px-8 rounded-full bg-[#D4AF37] text-black font-bold text- uppercase flex items-center gap-2"><CoinLogo size={20}/>{uploading?'Uploading...':'Publish • FIXED'}</button></div>
           </div>
         )}
         {tab!=='mybooks' && tab!=='ebooks' && (<div className="p-8 text-center text-white/30">Coming soon</div>)}
