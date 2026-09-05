@@ -58,21 +58,43 @@ export default function Admin() {
     setUploading(false)
   }
 
-  async function handlePublishAudiobook(){
-    if(!audioTitle||!audioCover) return alert('Title + Cover Mandatory!')
-    setAudioUploading(true)
-    try{
-      const coverRes = await uploadDirect(audioCover!, 'covers')
-      const openingRes = audioOpening? await uploadDirect(audioOpening, 'audiobooks') : null
-      const endingRes = audioEnding? await uploadDirect(audioEnding, 'audiobooks') : null
-      const chapters:any[]=[]
-      for(let i=0;i<15;i++){ if(audioChapters[i]){ const cr = await uploadDirect(audioChapters[i]!, 'audiobooks'); chapters.push({no:i+1, url:cr.url, path:cr.path}) } }
-      const { error } = await supabase.from('audiobooks').insert({ title: audioTitle, cover_url: coverRes.url, cover_path: coverRes.path, opening_url: openingRes?.url||null, opening_path: openingRes?.path||null, ending_url: endingRes?.url||null, ending_path: endingRes?.path||null, chapters, mrp: audioMrp, authors: ['Shanmugavel M'], publisher: 'SHANMUGAVEL BOOKUNIVERSE', description: 'Gold BIG BOX Audiobook - Howler PLAY ONLY' })
-      if(error) throw error
-      alert(`Audiobook Published! 🎧 ${chapters.length} audios Live!`); setAudioTitle(''); setAudioCover(null); setAudioOpening(null); setAudioEnding(null); setAudioChapters(Array(15).fill(null)); setTab('mybooks')
-    }catch(e:any){ alert('Audio Upload failed: '+e.message) }
-    setAudioUploading(false)
-  }
+async function handlePublishAudiobook(){
+  if(!audioTitle||!audioCover) return alert('Title + Cover Mandatory!')
+  setAudioUploading(true)
+  try{
+    // 1. Cover → Cloudinary (FIXES your covers: Failed to fetch)
+    const fd = new FormData(); fd.append('file', audioCover!)
+    const r = await fetch('/api/cloudinary-upload',{method:'POST', body: fd})
+    const coverRes = await r.json()
+    if(!r.ok) throw new Error('Cover: '+coverRes.error)
+
+    // 2. Audios → Supabase direct (audiobooks bucket)
+    const openingRes = audioOpening? await uploadDirect(audioOpening, 'audiobooks') : null
+    const endingRes = audioEnding? await uploadDirect(audioEnding, 'audiobooks') : null
+    const chapters:any[]=[]
+    for(let i=0;i<15;i++){
+      if(audioChapters[i]){
+        const cr = await uploadDirect(audioChapters[i]!, 'audiobooks')
+        chapters.push({no:i+1, url:cr.url, path:cr.path})
+      }
+    }
+    const { error } = await supabase.from('audiobooks').insert({
+      title: audioTitle,
+      cover_url: coverRes.url, cover_path: coverRes.path,
+      opening_url: openingRes?.url||null, opening_path: openingRes?.path||null,
+      ending_url: endingRes?.url||null, ending_path: endingRes?.path||null,
+      chapters,
+      mrp: audioMrp,
+      authors: ['Shanmugavel M'],
+      publisher: 'SHANMUGAVEL BOOKUNIVERSE',
+      description: 'Gold BIG BOX Audiobook - Howler PLAY ONLY'
+    })
+    if(error) throw error
+    alert(`Audiobook Published! 🎧 ${chapters.length} audios Live!`)
+    setAudioTitle(''); setAudioCover(null); setAudioOpening(null); setAudioEnding(null); setAudioChapters(Array(15).fill(null)); setTab('mybooks')
+  }catch(e:any){ alert('Audio Upload failed: '+e.message) }
+  setAudioUploading(false)
+}
 
   if (!authed) {
     return (
