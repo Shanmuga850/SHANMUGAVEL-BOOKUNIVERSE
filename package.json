@@ -19,7 +19,8 @@
     "pdf-lib": "^1.17.1",
     "howler": "^2.2.4",
     "razorpay": "^2.9.2",
-    "pdfjs-dist": "^4.4.168"
+    "pdfjs-dist": "^4.4.168",
+    "cloudinary": "^1.41.0"
   },
   "devDependencies": {
     "typescript": "^5",
