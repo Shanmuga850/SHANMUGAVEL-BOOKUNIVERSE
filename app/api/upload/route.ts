@@ -5,14 +5,14 @@ import { v2 as cloudinary } from 'cloudinary'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_key: process.env.CLOUDINARY_API_KEY || process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
@@ -21,57 +21,42 @@ export async function POST(req: Request){
     const form = await req.formData()
     const file = form.get('file') as File
     const type = (form.get('type') as string) || 'ebooks'
-    if(!file) return NextResponse.json({error:'No file uploaded'}, {status:400})
+    if(!file) return NextResponse.json({error:'No file'}, {status:400})
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const buffer = Buffer.from(await file.arrayBuffer())
     const ext = file.name.split('.').pop() || 'bin'
-    const fileName = `${type}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g,'_')
+    const fileName = `${Date.now()}_${safeName}`
 
     if(type==='cover' || type==='covers'){
-      // 1. Upload to Supabase covers (public)
-      const { error: supaError } = await supabase.storage.from('covers').upload(fileName, buffer, {
+      const { error } = await supabase.storage.from('covers').upload(fileName, buffer, {
         contentType: file.type || 'image/jpeg',
-        upsert: true
+        upsert:true
       })
-      if(supaError) throw new Error('covers: '+supaError.message)
-      const { data } = supabase.storage.from('covers').getPublicUrl(fileName)
+      if(error) return NextResponse.json({error:`covers bucket error: ${error.message} — Create 'covers' bucket PUBLIC in Supabase Storage!`}, {status:500})
+      const {data} = supabase.storage.from('covers').getPublicUrl(fileName)
       
-      // 2. Backup to Cloudinary bookuniverse/covers
-      let cloudinaryUrl = ''
-      let cloudinaryId = ''
+      // Cloudinary backup — non-blocking
       try{
-        const result:any = await new Promise((resolve, reject)=>{
-          cloudinary.uploader.upload_stream(
-            { folder: 'bookuniverse/covers', resource_type: 'image' },
-            (err, res)=> err? reject(err) : resolve(res)
-          ).end(buffer)
+        const res:any = await new Promise((resolve, reject)=>{
+          cloudinary.uploader.upload_stream({folder:'bookuniverse/covers'}, (e,r)=> e?reject(e):resolve(r)).end(buffer)
         })
-        cloudinaryUrl = result.secure_url
-        cloudinaryId = result.public_id
-      }catch(e){ console.log('Cloudinary backup failed', e) }
-
-      return NextResponse.json({ 
-        url: data.publicUrl, 
-        path: fileName,
-        cloudinaryUrl,
-        cloudinaryId,
-        public_id: cloudinaryId
-      })
+        return NextResponse.json({url:data.publicUrl, path:fileName, cloudinaryUrl:res.secure_url})
+      }catch{ 
+        return NextResponse.json({url:data.publicUrl, path:fileName}) 
+      }
     }
 
-    // ebooks or audiobooks
-    const bucket = type==='ebooks' || type==='pdf' ? 'ebooks' : type==='audiobooks' || type.includes('audio') ? 'audiobooks' : 'ebooks'
+    const bucket = type.includes('audio') ? 'audiobooks' : 'ebooks'
     const { error } = await supabase.storage.from(bucket).upload(fileName, buffer, {
-      contentType: file.type,
-      upsert: true
+      contentType: file.type, upsert:true
     })
-    if(error) throw new Error(`${bucket}: ${error.message}`)
-    const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
-    return NextResponse.json({ url: data.publicUrl, path: fileName })
+    if(error) return NextResponse.json({error:`${bucket} bucket error: ${error.message} — Create '${bucket}' bucket PUBLIC!`}, {status:500})
+    
+    const {data} = supabase.storage.from(bucket).getPublicUrl(fileName)
+    return NextResponse.json({url:data.publicUrl, path:fileName})
 
   }catch(e:any){
-    console.error('Upload error', e)
-    return NextResponse.json({error: e.message || 'Upload failed'}, {status:500})
+    return NextResponse.json({error:e.message}, {status:500})
   }
 }
